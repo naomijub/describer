@@ -1,0 +1,27 @@
+[package]
+name = "describer"
+version = "0.1.0"
+edition = "2024"
+authors = ["Julia Boeira <jnboeira@outlook.com>"]
+description = "Struct describing helper"
+readme = "README.md"
+keywords = ["struct", "describe", "type"]
+documentation = "https://docs.rs/describer/"
+repository = "https://github.com/naomijub/describer"
+license = "MIT"
+autotests = false
+
+[lib]
+proc-macro = true
+
+[[test]]
+name = "tests"
+path = "tests/progress.rs"
+
+[dependencies]
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+
+[dev-dependencies]
+trybuild = { version = "1.0", features = ["diff"] }

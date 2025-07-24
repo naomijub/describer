@@ -1,0 +1,5 @@
+error: The Tuple Struct variant is not yet supported
+ --> tests/err_tuple_struct.rs:4:16
+  |
+4 | struct MyStruct(Option<bool>, String);
+  |                ^^^^^^^^^^^^^^^^^^^^^^
