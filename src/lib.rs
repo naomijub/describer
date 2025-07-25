@@ -77,7 +77,10 @@ fn enum_variants(
             if var.fields.is_empty() {
                 Ok(var.ident)
             } else {
-                Err(Error::new(ident.span(), "Structed Enum not yet supported"))
+                Err(Error::new(
+                    ident.span(),
+                    "Structured Enum not yet supported",
+                ))
             }
         })
         .map(|var| {

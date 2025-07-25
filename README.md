@@ -73,7 +73,7 @@ fn main() {
 
 ### Results and Vecs:
 
-Results are explicitly represented, with `Result<OK, ERRROR>`, while `Vec`s are represented, by default, inside `[T]`
+Results are explicitly represented, with `Result<OK, ERROR>`, while `Vec`s are represented, by default, inside `[T]`
 ```rust
 use describer::Describe;
  
@@ -95,7 +95,7 @@ fn main() {
 
 ## Limitations:
 - TupleStructs are not yet supported.
-- Structed Enum Variants are not yet supported.
+- Structured Enum Variants are not yet supported.
 - Tuple Enum Variants are not yet supported.
 - Non derivable types are not supported.
 
