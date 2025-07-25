@@ -1,23 +1,13 @@
 //! Helper crate that generates customizable Rust `Structs` describing strings.
+#![doc = include_str!("../README.md")]
 
 use proc_macro::{self, TokenStream};
 use quote::quote;
-use syn::{DeriveInput, Error, FieldsNamed, Type, parse_macro_input, spanned::Spanned};
+use syn::{
+    AngleBracketedGenericArguments, DataEnum, DeriveInput, Error, FieldsNamed, GenericArgument,
+    Type, parse_macro_input, spanned::Spanned,
+};
 
-/// ```rust
-/// use describer::Describe;
-///
-/// #[derive(Describe)]
-/// struct MyStruct {
-///     opt: Option<bool>,
-///     my_string: String,
-/// }
-///
-/// assert_eq!(
-///     MyStruct::describe(),
-///     "MyStruct {opt: bool, my_string: String!}"
-/// );
-/// ```
 #[proc_macro_derive(Describe)]
 pub fn describe(input: TokenStream) -> TokenStream {
     let DeriveInput {
@@ -37,43 +27,21 @@ pub fn describe(input: TokenStream) -> TokenStream {
     }
     let field_names: Result<String, Error> = match data {
         syn::Data::Struct(s) => match s.fields {
-            syn::Fields::Named(FieldsNamed { named, .. }) => {
-                let fields = named
-                    .iter()
-                    .map(|f| &f.ident)
-                    .zip(named.iter().map(|f| &f.ty));
-
-                match fields
-                    .map(|(name, ty)| {
-                        let is_optional = is_optional(ty)?;
-                        let inner = optional_inner(ty)?;
-                        Ok(format!(
-                            "{}: {}{}",
-                            quote!(#name),
-                            if is_optional {
-                                inner
-                            } else {
-                                format!("{}", quote!(#ty))
-                            },
-                            if is_optional { "" } else { "!" }
-                        ))
-                    })
-                    .collect::<Result<Vec<_>, Error>>()
-                {
-                    Ok(names) => Ok(names.join(", ")),
-                    Err(err) => Err(err),
-                }
+            syn::Fields::Named(FieldsNamed { named, .. }) => named_struct(named),
+            syn::Fields::Unnamed(variant) => {
+                // variant.unnamed.into_iter()
+                Err(Error::new(
+                    variant.span(),
+                    "The Tuple Struct variant is not yet supported",
+                ))
             }
-            syn::Fields::Unnamed(variant) => Err(Error::new(
-                variant.span(),
-                "The Tuple Struct variant is not yet supported",
-            )),
-            syn::Fields::Unit => Err(Error::new(
-                s.fields.span(),
-                "The Unit variant is not yet supported",
-            )),
+            syn::Fields::Unit => Ok(String::new()),
         },
-        _ => panic!("The syn::Data variant is not yet supported"),
+        syn::Data::Enum(DataEnum { variants, .. }) => enum_variants(&ident, variants),
+        _ => Err(Error::new(
+            ident.span(),
+            "The syn::Data::Union variant is not supported",
+        )),
     };
 
     let field_names = match field_names {
@@ -86,7 +54,12 @@ pub fn describe(input: TokenStream) -> TokenStream {
     let expanded = quote! {
         impl #ident {
             fn describe() -> String {
-               format!("{} {{{}}}",stringify!(#ident), #field_names)
+                if (#field_names).is_empty() {
+                    format!("{}",stringify!(#ident))
+                } else {
+                    format!("{} {}",stringify!(#ident), #field_names)
+                }
+
             }
         }
     };
@@ -94,9 +67,74 @@ pub fn describe(input: TokenStream) -> TokenStream {
     expanded.into()
 }
 
-fn is_optional(ty: &Type) -> Result<bool, Error> {
+fn enum_variants(
+    ident: &syn::Ident,
+    variants: syn::punctuated::Punctuated<syn::Variant, syn::token::Comma>,
+) -> Result<String, Error> {
+    match variants
+        .into_iter()
+        .map(|var| {
+            if var.fields.is_empty() {
+                Ok(var.ident)
+            } else {
+                Err(Error::new(ident.span(), "Structed Enum not yet supported"))
+            }
+        })
+        .map(|var| {
+            let var = var?;
+            Ok(format!("{}", quote! {#var}))
+        })
+        .collect::<Result<Vec<String>, Error>>()
+    {
+        Ok(vars) => Ok(format!("#{{ {} }}", vars.join(", "))),
+        Err(err) => Err(err),
+    }
+}
+
+fn named_struct(
+    named: syn::punctuated::Punctuated<syn::Field, syn::token::Comma>,
+) -> Result<String, Error> {
+    let fields = named
+        .iter()
+        .map(|f| &f.ident)
+        .zip(named.iter().map(|f| &f.ty));
+
+    match fields
+        .map(|(name, ty)| {
+            let inner = flat_inner(ty)?;
+            Ok(format!("{}: {}", quote!(#name), inner))
+        })
+        .collect::<Result<Vec<_>, Error>>()
+    {
+        Ok(names) => Ok(format!("{{{}}}", names.join(", "))),
+        Err(err) => Err(err),
+    }
+}
+
+fn flat_inner(ty: &Type) -> Result<String, Error> {
     match ty {
-        Type::Path(_) => Ok(format!("{}", quote!(#ty)).starts_with("Option")),
+        Type::Path(path) => {
+            let segments = &path.path.segments;
+            let inner = segments.first();
+            match inner {
+                None => Err(Error::new(ty.span(), "Type ident is required")),
+                Some(inner) => {
+                    let ident = inner.ident.clone();
+                    let ident = format!("{}", quote! {#ident});
+                    // dbg!(&ident);
+                    if ident == "Option" || ident == "qself" {
+                        let value = get_inner_arguments_type(inner)?;
+                        Ok(value.strip_suffix('!').unwrap_or(&value).to_string())
+                    } else if inner.arguments.is_empty() || inner.arguments.is_none() {
+                        Ok(format!("{ident}!"))
+                    } else if ident == "Vec" {
+                        Ok(format!("[{}]!", get_inner_arguments_type(inner)?))
+                    } else {
+                        Ok(format!("{}<{}>!", ident, get_inner_arguments_type(inner)?))
+                    }
+                }
+            }
+        }
         variant => Err(Error::new(
             variant.span(),
             format!("Type {} not supported in current version", quote!(#ty)),
@@ -104,33 +142,23 @@ fn is_optional(ty: &Type) -> Result<bool, Error> {
     }
 }
 
-fn optional_inner(ty: &Type) -> Result<String, Error> {
-    match ty {
-        Type::Path(path) => {
-            let inner = path
-                .path
-                .segments
-                .iter()
-                .flat_map(|seg| quote!(#seg.ident))
-                .find(|segment| match segment {
-                    proc_macro2::TokenTree::Ident(ident) => {
-                        let ident = format!("{}", quote! {#ident});
-                        ident != "Option" && ident != "qself"
-                    }
-                    _ => false,
-                });
-            inner
-                .map(|seg| {
-                    format!("{}", quote!(#seg.ident))
-                        .strip_suffix(".ident")
-                        .map(|s| s.to_string())
-                        .unwrap_or_else(|| format!("{}", quote!(#seg.ident)))
-                })
-                .ok_or_else(|| Error::new(ty.span(), "Failed to identify Option generic type"))
-        }
-        variant => Err(Error::new(
-            variant.span(),
-            format!("Type {} not supported in current version", quote!(#ty)),
+fn get_inner_arguments_type(inner: &syn::PathSegment) -> Result<String, Error> {
+    match &inner.arguments {
+        syn::PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }) => Ok(args
+            .iter()
+            .map(|arg| match arg {
+                GenericArgument::Type(sub_type) => flat_inner(sub_type),
+                other => Err(Error::new(
+                    other.span(),
+                    "Generic SubType argument not yet supported",
+                )),
+            })
+            .collect::<Result<Vec<String>, Error>>()?
+            .join(", ")),
+        syn::PathArguments::None => Ok(String::new()),
+        argument => Err(Error::new(
+            argument.span(),
+            "Type argument not yet supported",
         )),
     }
 }
