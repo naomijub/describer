@@ -5,7 +5,7 @@ Helper crate that generates customizable Rust `Structs` describing strings.
 ## Installation
 ```toml
 [dependencies]
-describer = "0.1"
+describer = "0.2"
 ```
 
 ## Usage
@@ -29,7 +29,7 @@ struct MyStruct {
 fn main() {
     assert_eq!(
         MyStruct::describe(),
-        "MyStruct {opt: bool, my_string: String!}"
+        "MyStruct { opt: bool, my_string: String! }"
     );
 }
 ```
@@ -88,7 +88,110 @@ struct MyStruct {
 fn main() {
     assert_eq!(
         MyStruct::describe(),
-        "MyStruct {maybe_vec_u8s: [u8!], vec_maybe_u8s: [u8]!, vec_u8s: [u8!]!, result: Result<u8!, String!>!}"
+        "MyStruct { maybe_vec_u8s: [u8!], vec_maybe_u8s: [u8]!, vec_u8s: [u8!]!, result: Result<u8!, String!>! }"
+    );
+}
+```
+
+## Prettify Output
+
+### Hiding optional fields:
+To hide optional fields you can add the attribute `#[prettify(hide_opt = true)]`. It only hides root field optionals:
+
+```rust
+use describer::Describe;
+ 
+#[derive(Describe)]
+#[prettify(hide_opt = true)]
+struct MyStruct {
+    maybe_vec_u8s: Option<Vec<u8>>,
+    vec_maybe_u8s: Vec<Option<u8>>,
+    vec_u8s: Vec<u8>,
+}
+ 
+fn main() {
+    assert_eq!(
+        MyStruct::describe(),
+        "MyStruct { vec_maybe_u8s: [u8]!, vec_u8s: [u8!]! }"
+    );
+}
+```
+
+### Explicit Vec and linear collections:
+
+> Linear collections: `Vec<T>, HashSet<T>, BTreeSet<T>, indexmap::IndexSet<T>`
+
+To show linear collections explicit type `#[prettify(explicit_collections = true)]`. By default they are `[T]`:
+
+```rust
+use describer::Describe;
+ 
+#[derive(Describe)]
+#[prettify(explicit_collections = true)]
+struct MyStruct {
+    vec_u8s: Vec<u8>,
+}
+ 
+fn main() {
+    assert_eq!(
+        MyStruct::describe(),
+        "MyStruct { vec_u8s: Vec<u8!>! }"
+    );
+}
+```
+
+### Explicit key-value collections:
+
+> Key-value collections: `HashMap<K, T>, BTreeMap<K, T>, indexmap::IndexMap<K, T>`
+
+To show key-value collections explicit type `#[prettify(explicit_collections = true)]`. By default they are `{K, T}`:
+
+```rust
+use describer::Describe;
+use std::collections::{BTreeMap, HashMap};
+use indexmap::IndexMap;
+
+#[derive(Describe)]
+#[prettify(explicit_collections = true)]
+struct MyExplicitStruct {
+    map: HashMap<String, u8>
+}
+
+#[derive(Describe)]
+struct MyImplicitStruct {
+    map: HashMap<String, u8>,
+}
+ 
+fn main() {
+    assert_eq!(
+        MyExplicitStruct::describe(),
+        "MyExplicitStruct { map: HashMap<String!, u8!>! }"
+    );
+    assert_eq!(
+        MyImplicitStruct::describe(),
+        "MyImplicitStruct { map: {String!, u8!}! }"
+    );
+}
+```
+
+### Custom Separators and Spacing:
+
+The default separator is `", "` , the default spacing is `" "` and the default key-value (`keyval`) separator is `": "` with `tokens` it is possible to change separator and spacing to the desired customization.
+
+```rust
+use describer::Describe;
+
+#[derive(Describe)]
+#[prettify(tokens(separator = " && ", spacing = "\n", keyval = "=>"))]
+struct MyStruct {
+    vec_u8s: Vec<u8>,
+    other: u8,
+}
+ 
+fn main() {
+    assert_eq!(
+        MyStruct::describe(),
+        "MyStruct\n{\nvec_u8s=>[u8!]! && other=>u8!\n}"
     );
 }
 ```

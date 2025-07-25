@@ -1,6 +1,6 @@
 [package]
 name = "describer"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 authors = ["Julia Boeira <jnboeira@outlook.com>"]
 description = "Struct describing helper"
@@ -25,3 +25,4 @@ proc-macro2 = "1.0"
 
 [dev-dependencies]
 trybuild = { version = "1.0", features = ["diff"] }
+indexmap = "2.0"

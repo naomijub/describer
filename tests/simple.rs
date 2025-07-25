@@ -9,6 +9,6 @@ struct MyStruct {
 fn main() {
     assert_eq!(
         MyStruct::describe(),
-        "MyStruct {opt: bool, my_string: String!}"
+        "MyStruct { opt: bool, my_string: String! }"
     );
 }
