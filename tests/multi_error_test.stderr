@@ -1,0 +1,26 @@
+error: expected `,`
+ --> tests/multi_error_test.rs:5:29
+  |
+5 | #[prettify(tokens(sepurator = ",", spacigg = "\n", key_val = "=>"))]
+  |                             ^
+
+error: `hide_opt` supports only boolean types
+ --> tests/multi_error_test.rs:6:23
+  |
+6 | #[prettify(hide_opt = 1)]
+  |                       ^
+
+error: `explicit_collections` supports only boolean types
+ --> tests/multi_error_test.rs:7:35
+  |
+7 | #[prettify(explicit_collections = "true")]
+  |                                   ^^^^^^
+
+error[E0599]: no function or associated item named `describe` found for struct `MyStruct` in the current scope
+  --> tests/multi_error_test.rs:16:19
+   |
+9  | struct MyStruct {
+   | --------------- function or associated item `describe` not found for this struct
+...
+16 |         MyStruct::describe(),
+   |                   ^^^^^^^^ function or associated item not found in `MyStruct`

@@ -12,4 +12,5 @@ fn tests() {
     t.pass("tests/keyval_collections.rs");
     t.pass("tests/separator.rs");
     t.pass("tests/hide_name.rs");
+    t.compile_fail("tests/multi_error_test.rs");
 }

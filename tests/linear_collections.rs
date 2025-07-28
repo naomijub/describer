@@ -4,6 +4,7 @@ use indexmap::IndexSet;
 
 #[derive(Describe)]
 #[prettify(explicit_collections = true)]
+#[prettify(hide_name = true)]
 struct MyExplicitStruct {
     vec_u8s: Vec<u8>,
     set: HashSet<u8>,
@@ -22,7 +23,7 @@ struct MyImplicitStruct {
 fn main() {
     assert_eq!(
         MyExplicitStruct::describe(),
-        "MyExplicitStruct { vec_u8s: Vec<u8!>!, set: HashSet<u8!>!, btree: BTreeSet<u8!>!, indexed: IndexSet<u8!>! }"
+        "{ vec_u8s: Vec<u8!>!, set: HashSet<u8!>!, btree: BTreeSet<u8!>!, indexed: IndexSet<u8!>! }"
     );
     assert_eq!(
         MyImplicitStruct::describe(),

@@ -32,23 +32,33 @@ pub fn describe(input: TokenStream) -> TokenStream {
     let mut keyval = ": ".to_string();
     let mut hide_name = false;
 
-    if let Some(pretty) = attrs
+    let errors = attrs
         .iter()
-        .find(|attr| attr.path().is_ident("prettify"))
-        .and_then(|attr| attr.parse_args::<syn::Meta>().ok())
-    {
-        if let Some(err) = get_hide_opt(&mut hide_opt, &pretty) {
-            return err;
+        .filter(|attr| attr.path().is_ident("prettify"))
+        .filter_map(|attr| attr.parse_args::<syn::Meta>().ok())
+        .fold(Vec::new(), |mut acc, pretty| {
+            if let Some(err) = get_hide_opt(&mut hide_opt, &pretty) {
+                acc.push(err);
+            }
+            if let Some(err) = get_explicit_collection(&mut explicit_collections, &pretty) {
+                acc.push(err);
+            }
+            if let Some(err) = set_tokens(&mut separator, &mut spacing, &mut keyval, &pretty) {
+                acc.push(err);
+            }
+            if let Some(err) = get_hide_name(&mut hide_name, &pretty) {
+                acc.push(err);
+            }
+            acc
+        });
+    if !errors.is_empty() {
+        let mut iter = errors.into_iter();
+        let mut error = iter.next().unwrap();
+
+        for err in iter {
+            error.combine(err);
         }
-        if let Some(err) = get_explicit_collection(&mut explicit_collections, &pretty) {
-            return err;
-        }
-        if let Some(err) = set_tokens(&mut separator, &mut spacing, &mut keyval, &pretty) {
-            return err;
-        }
-        if let Some(err) = get_hide_name(&mut hide_name, &pretty) {
-            return err;
-        }
+        return error.to_compile_error().into();
     }
     if !quote! {#generics}.is_empty() {
         return Error::new(

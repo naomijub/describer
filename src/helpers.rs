@@ -1,20 +1,15 @@
-use proc_macro::{self, TokenStream};
 use quote::quote;
 use syn::{Error, ExprLit, Lit, LitBool, LitStr, TypePath, spanned::Spanned};
 
-pub fn get_hide_opt(hide_opt: &mut bool, pretty: &syn::Meta) -> Option<TokenStream> {
+pub fn get_hide_opt(hide_opt: &mut bool, pretty: &syn::Meta) -> Option<Error> {
     if let syn::Meta::NameValue(named) = pretty
         && named.path.is_ident("hide_opt")
     {
         if named.path.segments.len() > 1 {
-            return Some(
-                Error::new(
-                    named.path.span(),
-                    "Only single paths segments are permitted",
-                )
-                .to_compile_error()
-                .into(),
-            );
+            return Some(Error::new(
+                named.path.span(),
+                "Only single paths segments are permitted",
+            ));
         }
         if let syn::Expr::Lit(ExprLit {
             lit: Lit::Bool(LitBool { value, .. }),
@@ -23,29 +18,24 @@ pub fn get_hide_opt(hide_opt: &mut bool, pretty: &syn::Meta) -> Option<TokenStre
         {
             *hide_opt = value;
         } else {
-            return Some(
-                Error::new(named.value.span(), "`hide_opt` supports only boolean types")
-                    .to_compile_error()
-                    .into(),
-            );
+            return Some(Error::new(
+                named.value.span(),
+                "`hide_opt` supports only boolean types",
+            ));
         };
     }
     None
 }
 
-pub fn get_hide_name(hide_name: &mut bool, pretty: &syn::Meta) -> Option<TokenStream> {
+pub fn get_hide_name(hide_name: &mut bool, pretty: &syn::Meta) -> Option<Error> {
     if let syn::Meta::NameValue(named) = pretty
         && named.path.is_ident("hide_name")
     {
         if named.path.segments.len() > 1 {
-            return Some(
-                Error::new(
-                    named.path.span(),
-                    "Only single paths segments are permitted",
-                )
-                .to_compile_error()
-                .into(),
-            );
+            return Some(Error::new(
+                named.path.span(),
+                "Only single paths segments are permitted",
+            ));
         }
         if let syn::Expr::Lit(ExprLit {
             lit: Lit::Bool(LitBool { value, .. }),
@@ -54,14 +44,10 @@ pub fn get_hide_name(hide_name: &mut bool, pretty: &syn::Meta) -> Option<TokenSt
         {
             *hide_name = value;
         } else {
-            return Some(
-                Error::new(
-                    named.value.span(),
-                    "`hide_name` supports only boolean types",
-                )
-                .to_compile_error()
-                .into(),
-            );
+            return Some(Error::new(
+                named.value.span(),
+                "`hide_name` supports only boolean types",
+            ));
         };
     }
     None
@@ -70,19 +56,15 @@ pub fn get_hide_name(hide_name: &mut bool, pretty: &syn::Meta) -> Option<TokenSt
 pub fn get_explicit_collection(
     explicit_collections: &mut bool,
     pretty: &syn::Meta,
-) -> Option<TokenStream> {
+) -> Option<Error> {
     if let syn::Meta::NameValue(named) = pretty
         && named.path.is_ident("explicit_collections")
     {
         if named.path.segments.len() > 1 {
-            return Some(
-                Error::new(
-                    named.path.span(),
-                    "Only single paths segments are permitted",
-                )
-                .to_compile_error()
-                .into(),
-            );
+            return Some(Error::new(
+                named.path.span(),
+                "Only single paths segments are permitted",
+            ));
         }
         if let syn::Expr::Lit(ExprLit {
             lit: Lit::Bool(LitBool { value, .. }),
@@ -91,14 +73,10 @@ pub fn get_explicit_collection(
         {
             *explicit_collections = value;
         } else {
-            return Some(
-                Error::new(
-                    named.value.span(),
-                    "`explicit_collections` supports only boolean types",
-                )
-                .to_compile_error()
-                .into(),
-            );
+            return Some(Error::new(
+                named.value.span(),
+                "`explicit_collections` supports only boolean types",
+            ));
         };
     }
     None
@@ -109,7 +87,7 @@ pub fn set_tokens(
     spacing: &mut String,
     keyval: &mut String,
     pretty: &syn::Meta,
-) -> Option<TokenStream> {
+) -> Option<Error> {
     if let syn::Meta::List(list) = pretty
         && list.path.is_ident("tokens")
     {
@@ -156,7 +134,7 @@ pub fn set_tokens(
         });
 
         if let Err(err) = res {
-            return Some(err.to_compile_error().into());
+            return Some(err);
         }
     }
     None
