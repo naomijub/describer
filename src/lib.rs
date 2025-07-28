@@ -9,8 +9,8 @@ use syn::{
 };
 
 use crate::helpers::{
-    get_explicit_collection, get_hide_opt, is_keyval_collection, is_linear_collection,
-    optional_type_path, set_tokens,
+    get_explicit_collection, get_hide_name, get_hide_opt, is_keyval_collection,
+    is_linear_collection, optional_type_path, set_tokens,
 };
 
 mod helpers;
@@ -30,6 +30,7 @@ pub fn describe(input: TokenStream) -> TokenStream {
     let mut separator = ", ".to_string();
     let mut spacing = " ".to_string();
     let mut keyval = ": ".to_string();
+    let mut hide_name = false;
 
     if let Some(pretty) = attrs
         .iter()
@@ -43,6 +44,9 @@ pub fn describe(input: TokenStream) -> TokenStream {
             return err;
         }
         if let Some(err) = set_tokens(&mut separator, &mut spacing, &mut keyval, &pretty) {
+            return err;
+        }
+        if let Some(err) = get_hide_name(&mut hide_name, &pretty) {
             return err;
         }
     }
@@ -94,8 +98,10 @@ pub fn describe(input: TokenStream) -> TokenStream {
             fn describe() -> String {
                 if (#field_names).is_empty() {
                     format!("{}",stringify!(#ident))
-                } else {
+                } else if !#hide_name {
                     format!("{}{}{}",stringify!(#ident),#spacing, #field_names)
+                } else {
+                    format!("{}", #field_names)
                 }
 
             }

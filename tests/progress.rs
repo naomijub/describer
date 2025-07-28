@@ -11,4 +11,5 @@ fn tests() {
     t.pass("tests/linear_collections.rs");
     t.pass("tests/keyval_collections.rs");
     t.pass("tests/separator.rs");
+    t.pass("tests/hide_name.rs");
 }

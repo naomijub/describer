@@ -96,6 +96,7 @@ fn main() {
 ## Prettify Output
 
 ### Hiding optional fields:
+
 To hide optional fields you can add the attribute `#[prettify(hide_opt = true)]`. It only hides root field optionals:
 
 ```rust
@@ -196,11 +197,34 @@ fn main() {
 }
 ```
 
+### Hide Struct/Enum Name
+
+To hide struct or enum name you can add the attribute `#[prettify(hide_name = true)]`:
+
+```rust
+use describer::Describe;
+ 
+#[derive(Describe)]
+#[prettify(hide_name = true)]
+struct MyStruct {
+    opt: Option<bool>,
+    my_string: String,
+}
+ 
+fn main() {
+    assert_eq!(
+        MyStruct::describe(),
+        "{ opt: bool, my_string: String! }"
+    );
+}
+```
+
 ## Limitations:
 - TupleStructs are not yet supported.
 - Structured Enum Variants are not yet supported.
 - Tuple Enum Variants are not yet supported.
 - Non derivable types are not supported.
+- Nested describing is not yet supported.
 
 ## Inspired by:
 - https://solana.com/developers/courses/program-optimization/rust-macros#example-of-a-procedural-macro

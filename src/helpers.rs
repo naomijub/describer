@@ -33,6 +33,40 @@ pub fn get_hide_opt(hide_opt: &mut bool, pretty: &syn::Meta) -> Option<TokenStre
     None
 }
 
+pub fn get_hide_name(hide_name: &mut bool, pretty: &syn::Meta) -> Option<TokenStream> {
+    if let syn::Meta::NameValue(named) = pretty
+        && named.path.is_ident("hide_name")
+    {
+        if named.path.segments.len() > 1 {
+            return Some(
+                Error::new(
+                    named.path.span(),
+                    "Only single paths segments are permitted",
+                )
+                .to_compile_error()
+                .into(),
+            );
+        }
+        if let syn::Expr::Lit(ExprLit {
+            lit: Lit::Bool(LitBool { value, .. }),
+            ..
+        }) = named.value
+        {
+            *hide_name = value;
+        } else {
+            return Some(
+                Error::new(
+                    named.value.span(),
+                    "`hide_name` supports only boolean types",
+                )
+                .to_compile_error()
+                .into(),
+            );
+        };
+    }
+    None
+}
+
 pub fn get_explicit_collection(
     explicit_collections: &mut bool,
     pretty: &syn::Meta,
